@@ -1,0 +1,7 @@
+.bloop/
+.bsp/
+.metals/
+project/project/
+target/
+/node_modules/
+vakata-jstree*
