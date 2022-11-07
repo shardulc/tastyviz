@@ -10,6 +10,8 @@ import tastyquery.Contexts.*
 import tastyquery.Names.FullyQualifiedName
 import tastyquery.Trees.*
 import scalatags.generic.TypedTag
+import tastyquery.Flags
+import tastyquery.Types.TermRef
 
 
 class PrettyPrinter(classpaths: Seq[String]):
@@ -67,6 +69,9 @@ class PrettyPrinter(classpaths: Seq[String]):
       case t: Template => buildHtmlTemplate(t)
       case t: DefDef => buildHtmlDefDef(t)
       case t: ValDef => buildHtmlValDef(t)
+      case EmptyTree => buildHtmlEmptyTree
+      case t: Apply => buildHtmlApply(t)
+      case t: Select => buildHtmlSelect(t)
       case t @ _ => li(span(`class` := treeNodeType, t.getClass().getName()))
 
   def buildHtmlClassDef(tree: ClassDef) =
@@ -127,19 +132,61 @@ class PrettyPrinter(classpaths: Seq[String]):
       case Left(p) => li(
         span(`class` := treeNodeDesc, "term parameters"),
         if p.isEmpty then ul(li(span(`class` := treeNodeDesc, "(none)")))
-        else ul(p.map(buildHtml): _*),
+        else ul(p.map(buildHtmlValDef(_, isParameter = true)): _*),
       )
       case Right(p) => li(
         span(`class` := treeNodeDesc, "type parameters"),
         span("can't handle these yet"),
       )
 
-  def buildHtmlValDef(tree: ValDef) =
+  def buildHtmlValDef(tree: ValDef, isParameter: Boolean = false) =
+    val fullName = if isParameter then List.empty
+      else List(attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
+        tree.symbol.enclosingDecl.fullName.path :+ tree.symbol.name)))
     li(
-      attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
-        tree.symbol.enclosingDecl.fullName.path :+ tree.symbol.name)),
       `class` := "jstree-open",
       span(`class` := treeNodeType, "ValDef"),
       span(`class` := treeSymbol, tree.symbol.asTerm.name.toString),
       ul(buildHtml(tree.rhs)),
+    )(fullName: _*)
+
+  def buildHtmlEmptyTree =
+    li(
+      span(`class` := treeNodeType, "EmptyTree"),
+    )
+
+  def buildHtmlApply(tree: Apply) =
+    val args = if tree.args.isEmpty then List(li(span(`class` := treeNodeDesc, "(none)")))
+      else tree.args.map(buildHtml)
+    li(
+      span(`class` := treeNodeType, "Apply"),
+      `class` := "jstree-open",
+      ul(
+        li(
+          `class` := "jstree-open",
+          span(`class` := treeNodeDesc, "function"),
+          ul(buildHtml(tree.fun)),
+        ),
+        li(
+          span(`class` := treeNodeDesc, "arguments"),
+          ul(args: _*),
+        ),
+      )
+    )
+
+  def buildHtmlSelect(tree: Select) =
+    li(
+      span(`class` := treeNodeType, "Select"),
+      `class` := "jstree-open",
+      ul(
+        li(
+          span(`class` := treeNodeDesc, "qualifier"),
+          ul(buildHtml(tree.qualifier)),
+        ),
+        li(
+          span(`class` := treeSymbol, tree.name.toString),
+          attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
+            List(tree.name)))
+        ),
+      )
     )
