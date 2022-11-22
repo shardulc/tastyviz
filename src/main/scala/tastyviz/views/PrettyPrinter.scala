@@ -17,15 +17,6 @@ import ViewConstants.*
 
 class PrettyPrinter(using Context):
 
-  def prettyPrintSymbol(s: Symbol): String = s match
-    case NoSymbol => "<no symbol>"
-    case _: PackageSymbol =>
-      if s.isRoot then "package <root>"
-      else s"package ${s.fullName.toString}"
-    case _: TermSymbol => s.name.toString
-    case _: ClassSymbol => s"class ${s.name.toString}"
-    case _ => s.toString
-
   def getSymbolInfo(fullName: FullyQualifiedName) =
     val symbol = ctx.findSymbolFromRoot(fullName.path)
     div(

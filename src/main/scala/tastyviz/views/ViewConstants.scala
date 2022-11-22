@@ -12,6 +12,8 @@ object ViewConstants:
     val symbolTreeView: ID = "#tv-symbolTreeView"
     val symbolInfoView: ID = "#tv-symbolInfoView"
 
+    val topLevelDivs = Seq(packageView, treeControl, treeDisplay).mkString(", ")
+
   object ViewControls:
     val expandAll: ID = "#tv-expandAll"
     val collapseAll: ID = "#tv-collapseAll"
