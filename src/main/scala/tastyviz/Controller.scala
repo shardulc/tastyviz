@@ -34,12 +34,11 @@ object Controller:
   val host = "http://localhost:8080/"
   def main(args: Array[String]): Unit =
     val classpath = tastyviz.generated.JavaClasspaths.classpaths
-      .appended("tasty-query.jar")
       .map(path => host + path)
+      .appendedAll(UserClasspath.classpath)
     ClasspathLoaders.read(classpath)
       .map(tastyquery.Contexts.init(_))
       .map{ ctx =>
         val controller = Controller(classpath)(using ctx)
         controller.initialize()
       }
-    

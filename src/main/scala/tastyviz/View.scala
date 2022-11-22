@@ -118,26 +118,15 @@ class View(
     initializeJSTree()
     $(ViewDivs.treeControl).add(ViewDivs.treeDisplay).show()
 
-  def showPackage(model: TastyPackageModel) =
-    $(ViewDivs.treeControl).add(ViewDivs.treeDisplay).hide()
+  private def buildClasspathHtml =
+    div(
+      p("classpath:"),
+      ul(classpath.map(li(_)): _*),
+    )
+
+  private def buildPackageDeclarationsHtml(model: TastyPackageModel) =
     val declarationLinks = model.declarations
-      .sortWith((s1, s2) =>
-        s1 match
-          case _: PackageSymbol =>
-            s2 match
-              case _: PackageSymbol => s1.name.toString < s2.name.toString
-              case _ => true
-          case _: TypeSymbol =>
-            s2 match
-              case _: PackageSymbol => false
-              case _: TypeSymbol => s1.name.toString < s2.name.toString
-              case _ => true
-          case _ =>
-            s2 match
-              case _: PackageSymbol => false
-              case _: TypeSymbol => false
-              case _ => s1.name.toString < s2.name.toString
-      )
+      .sortWith(symbolLt)
       .map(d => li(a(
         printer.prettyPrintSymbol(d),
         href := "javascript:void(0)",
@@ -146,14 +135,32 @@ class View(
         "<..>",
         href := "javascript:void(0)",
         onclick := { () => onClickPackageParent() })))
-    $(ViewDivs.packageView).html(
-      p(
-        "classpath:",
-        ul(classpath.map(li(_)): _*),
-      ).render.outerHTML
-    ).append(
-      p(
-        s"declarations in ${printer.prettyPrintSymbol(model.symbol)}:",
-        ul(declarationLinks: _*),
-      ).render
-    ).show()
+    div(
+      p(s"declarations in ${printer.prettyPrintSymbol(model.symbol)}:"),
+      ul(declarationLinks: _*),
+    )
+
+  def showPackage(model: TastyPackageModel) =
+    $(ViewDivs.treeControl).add(ViewDivs.treeDisplay).hide()
+    $(ViewDivs.packageView)
+      .html(buildClasspathHtml.render.outerHTML)
+      .append(buildPackageDeclarationsHtml(model).render)
+      .show()
+
+
+  def symbolLt(s1: Symbol, s2: Symbol): Boolean =
+    s1 match
+      case _: PackageSymbol =>
+        s2 match
+          case _: PackageSymbol => s1.name.toString < s2.name.toString
+          case _ => true
+      case _: TypeSymbol =>
+        s2 match
+          case _: PackageSymbol => false
+          case _: TypeSymbol => s1.name.toString < s2.name.toString
+          case _ => true
+      case _ =>
+        s2 match
+          case _: PackageSymbol => false
+          case _: TypeSymbol => false
+          case _ => s1.name.toString < s2.name.toString
