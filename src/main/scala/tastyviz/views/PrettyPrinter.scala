@@ -1,4 +1,4 @@
-package tastyviz
+package tastyviz.views
 
 import java.nio.file.Paths
 

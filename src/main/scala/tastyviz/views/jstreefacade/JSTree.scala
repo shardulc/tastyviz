@@ -1,5 +1,6 @@
-package tastyviz.jstreefacade
+package tastyviz.views.jstreefacade
 
+import scala.language.implicitConversions
 import scalajs.js
 import scalajs.js.annotation.*
 

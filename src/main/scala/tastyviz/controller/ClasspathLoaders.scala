@@ -1,4 +1,4 @@
-package tastyviz
+package tastyviz.controller
 
 import scala.collection.mutable
 import scala.concurrent.*

@@ -1,10 +1,13 @@
-package tastyviz
+package tastyviz.controller
 
 import concurrent.ExecutionContext.Implicits.global
 import collection.mutable.Stack
 
 import tastyquery.Contexts.*
 import tastyquery.Symbols.*
+
+import tastyviz.views.*
+import tastyviz.models.*
 
 class Controller(classpath: List[String])(using Context):
   val packageStack = Stack.empty[TastyPackageModel]

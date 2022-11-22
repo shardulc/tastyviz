@@ -1,4 +1,4 @@
-package tastyviz
+package tastyviz.models
 
 import tastyquery.Contexts.*
 import tastyquery.Names.*

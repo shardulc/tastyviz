@@ -1,4 +1,4 @@
-package tastyviz
+package tastyviz.views
 
 object ViewConstants:
   type ID = String

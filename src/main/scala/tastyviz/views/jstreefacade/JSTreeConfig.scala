@@ -1,4 +1,4 @@
-package tastyviz.jstreefacade
+package tastyviz.views.jstreefacade
 
 import scalajs.js
 import scala.scalajs.js.annotation.JSName

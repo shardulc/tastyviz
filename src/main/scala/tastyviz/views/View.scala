@@ -1,4 +1,4 @@
-package tastyviz
+package tastyviz.views
 
 import scala.collection.mutable
 
@@ -14,6 +14,7 @@ import tastyquery.Symbols.*
 import java.util.TimerTask
 
 import ViewConstants.*
+import tastyviz.models.*
 
 /*
 to implement:

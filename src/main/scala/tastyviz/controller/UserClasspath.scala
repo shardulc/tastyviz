@@ -1,4 +1,4 @@
-package tastyviz
+package tastyviz.controller
 
 object UserClasspath:
   val classpath = Seq(
