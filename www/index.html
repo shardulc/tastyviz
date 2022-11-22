@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha512-XMVd28F1oH/O71fzwBnV7HucLxVwtxf26XV8P4wPk26EDxuGZ91N8bsOttmnomcCD3CS5ZMRL50H0GgOHvegtg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600">
+  </head>
+  <body>
+    <div id="tv-packageView">
+    </div>
+    <div id="tv-treeControl" style="display: none;">
+      <input type="button" id="tv-expandAll" value="expand all">
+      <input type="button" id="tv-collapseAll" value="collapse all">
+      <input type="checkbox" id="tv-showTypes" name="showTypes">
+      <label for="showTypes" id="tv-showTypesLabel">show types</label>
+      <input placeholder="search symbols..." type="search" id="tv-searchSymbols">
+      <input placeholder="search TASTy nodes..." type="search" id="tv-searchNodes">
+    </div>
+    <div id="tv-treeDisplay">
+      <div id="tv-defTreeView"></div>
+      <div id="tv-symbolTreeView"></div>
+      <div id="tv-symbolInfoView"></div>
+      <script src="main.js"></script>
+    </div>
+  </body>
+</html>

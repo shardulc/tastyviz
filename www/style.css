@@ -2,48 +2,45 @@ body {
     font-family: "Fira Code", "Ubuntu Mono", monospace;
     height: 100%;
     padding: 1em;
-}
-
-body.treeView {
     display: flex;
     flex-direction: column;
     gap: 2em;
 }
 
-div.treeControl {
+div#tv-treeControl {
     align-items: center;
     display: flex;
     flex-direction: row;
     gap: 2.5em;
 }
 
-div.treeControl input {
+div#tv-treeControl input {
     font-family: inherit;
 }
 
-div.treeControl label#showTypesLabel {
+div#tv-treeControl label#tv-showTypesLabel {
     margin-left: -2.2em;
 }
 
-div.treeDisplay {
+div#tv-treeDisplay {
     align-items: flex-start;
     display: flex;
     flex-direction: row;
 }
 
-div#deftreeRoot {
+div#tv-defTreeView {
     width: 50%;
 }
 
-span.treeSymbol {
+span.tv-treeSymbol {
     font-weight: 600;
 }
 
-div#deftreeRoot span.treeSymbol {
+div#tv-defTreeView span.tv-treeSymbol {
     margin: 0 0.2em;
 }
 
-span.treeNodeType {
+span.tv-treeNodeType {
     margin: 0 0.2em;
 }
 
@@ -54,24 +51,23 @@ span.treeNodeType {
     font-weight: 400;
 }
 
-div#treeSymbolInfo {
+div#tv-treeSymbolInfo {
     display: flex;
     flex-direction: column;
     gap: 2.5em;
 }
 
-div.symbolInfoBox {
+div.tv-symbolInfoBox {
     display: flex;
     flex-direction: column;
     gap: 0.7em;
 }
 
-div.symbolInfoBox > div {
+div.tv-symbolInfoBox > div {
     display: flex;
     flex-direction: column;
 }
 
-span.symbolInfoBoxDesc {
+span.tv-symbolInfoBoxDesc {
     display: block;
 }
-F

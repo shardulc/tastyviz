@@ -4,39 +4,27 @@ import java.nio.file.Paths
 
 import scalatags.Text.all.*
 
-import tastyquery.jdk.ClasspathLoaders
 import tastyquery.Contexts
 import tastyquery.Contexts.*
+import tastyquery.Symbols.*
 import tastyquery.Names.FullyQualifiedName
 import tastyquery.Trees.*
 import scalatags.generic.TypedTag
 import tastyquery.Flags
 import tastyquery.Types.TermRef
 
+import ViewConstants.*
 
-class PrettyPrinter(classpaths: Seq[String]):
+class PrettyPrinter(using Context):
 
-  final val treeRootID = "deftreeRoot"
-  final val treeNodeType = "treeNodeType"
-  final val treeNodeDesc = "treeNodeDesc"
-  final val treeSymbol = "treeSymbol"
-  final val treeSymbolInfoID = "treeSymbolInfo"
-
-  given Context = Contexts.init(ClasspathLoaders.read(classpaths.map(p => Paths.get(p)).toList))
-
-  def getDeclarationsInPackage(fullName: FullyQualifiedName) =
-    ul(
-      for
-        decl <- ctx.findPackageFromRoot(fullName)
-          .asPackage
-          .declarations
-      yield
-        val encodedName = FullNameCodec.encode(decl.fullName)
-        val pkgOrSym = if decl.isPackage then "package" else "symbol"
-        li(a(
-          span(decl.toString(), cls := "symbol"),
-          href := s"/${pkgOrSym}/${FullNameCodec.encode(decl.fullName)}"))
-    )
+  def prettyPrintSymbol(s: Symbol): String = s match
+    case NoSymbol => "<no symbol>"
+    case _: PackageSymbol =>
+      if s.isRoot then "package <root>"
+      else s"package ${s.fullName.toString}"
+    case _: TermSymbol => s.name.toString
+    case _: ClassSymbol => s"class ${s.name.toString}"
+    case _ => s.toString
 
   def getSymbolInfo(fullName: FullyQualifiedName) =
     val symbol = ctx.findSymbolFromRoot(fullName.path)
@@ -44,7 +32,7 @@ class PrettyPrinter(classpaths: Seq[String]):
       `class` := "symbolInfoBox",
       div(
         span("fully qual'd name:", `class` := "symbolInfoBoxDesc"),
-        span(symbol.fullName.toString, `class` := treeSymbol),
+        span(symbol.fullName.toString, `class` := ViewStyles.treeSymbol),
       ),
       div(
         span("flags:", `class` := "symbolInfoBoxDesc"),
@@ -56,12 +44,15 @@ class PrettyPrinter(classpaths: Seq[String]):
     ctx.findSymbolFromRoot(fullName.path).tree match
       case Some(tree) =>
         div(
-          id := treeRootID,
+          id := ViewDivs.defTreeView,
           ul(
             buildHtml(tree.asInstanceOf[Tree]),
           ),
         )
       case None => p("no deftree")
+
+  def show(tree: Tree) =
+    ul(buildHtml(tree)).render
 
   def buildHtml(tree: Tree): Modifier =
     tree match
@@ -72,38 +63,38 @@ class PrettyPrinter(classpaths: Seq[String]):
       case EmptyTree => buildHtmlEmptyTree
       case t: Apply => buildHtmlApply(t)
       case t: Select => buildHtmlSelect(t)
-      case t @ _ => li(span(`class` := treeNodeType, t.getClass().getName()))
+      case t @ _ => li(span(`class` := ViewStyles.treeNodeType, t.getClass().getName()))
 
   def buildHtmlClassDef(tree: ClassDef) =
     li(
-      attr("tv-fullName") := FullNameCodec.encode(tree.symbol.fullName),
-      span(`class` := treeNodeType, "ClassDef"),
-      span(`class` := treeSymbol, tree.symbol.asType.name.toString),
+      // attr("tv-fullName") := FullNameCodec.encode(tree.symbol.fullName),
+      span(`class` := ViewStyles.treeNodeType, "ClassDef"),
+      span(`class` := ViewStyles.treeSymbol, tree.symbol.asType.name.toString),
       ul(buildHtml(tree.rhs)),
     )
 
   def buildHtmlTemplate(tree: Template) =
     li(
       `class` := "jstree-open",
-      span(`class` := treeNodeType, "Template"),
+      span(`class` := ViewStyles.treeNodeType, "Template"),
       ul(
         li(
-          span(`class` := treeNodeDesc, "constructor"),
+          span(`class` := ViewStyles.treeNodeDesc, "constructor"),
           ul(buildHtmlDefDef(tree.constr)),
         ),
         li(
-          span(`class` := treeNodeDesc, "parents"),
+          span(`class` := ViewStyles.treeNodeDesc, "parents"),
           ul(tree.parents
             .filter(_.isInstanceOf[Tree])
             .map(_.asInstanceOf[Tree])
             .map(buildHtml): _*),
         ),
         li(
-          span(`class` := treeNodeDesc, "self"),
+          span(`class` := ViewStyles.treeNodeDesc, "self"),
           ul(buildHtml(tree.self)),
         ),
         li(
-          span(`class` := treeNodeDesc, "body"),
+          span(`class` := ViewStyles.treeNodeDesc, "body"),
           ul(tree.body.map(buildHtml): _*),
         ),
       )
@@ -111,17 +102,17 @@ class PrettyPrinter(classpaths: Seq[String]):
 
   def buildHtmlDefDef(tree: DefDef) =
     li(
-      attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
-        tree.symbol.enclosingDecl.fullName.path :+ tree.symbol.name)),
-      span(`class` := treeNodeType, "DefDef"),
-      span(`class` := treeSymbol, tree.symbol.asTerm.name.toString),
+      // attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
+        // tree.symbol.enclosingDecl.fullName.path :+ tree.symbol.name)),
+      span(`class` := ViewStyles.treeNodeType, "DefDef"),
+      span(`class` := ViewStyles.treeSymbol, tree.symbol.asTerm.name.toString),
       ul(
         li(
-          span(`class` := treeNodeDesc, "parameters"),
+          span(`class` := ViewStyles.treeNodeDesc, "parameters"),
           ul(tree.paramLists.map(buildHtmlParamsClause): _*),
         ),
         li(
-          span(`class` := treeNodeDesc, "right-hand side"),
+          span(`class` := ViewStyles.treeNodeDesc, "right-hand side"),
           ul(buildHtml(tree.rhs)),
         ),
       ),
@@ -130,45 +121,45 @@ class PrettyPrinter(classpaths: Seq[String]):
   def buildHtmlParamsClause(params: ParamsClause) =
     params match
       case Left(p) => li(
-        span(`class` := treeNodeDesc, "term parameters"),
-        if p.isEmpty then ul(li(span(`class` := treeNodeDesc, "(none)")))
+        span(`class` := ViewStyles.treeNodeDesc, "term parameters"),
+        if p.isEmpty then ul(li(span(`class` := ViewStyles.treeNodeDesc, "(none)")))
         else ul(p.map(buildHtmlValDef(_, isParameter = true)): _*),
       )
       case Right(p) => li(
-        span(`class` := treeNodeDesc, "type parameters"),
+        span(`class` := ViewStyles.treeNodeDesc, "type parameters"),
         span("can't handle these yet"),
       )
 
   def buildHtmlValDef(tree: ValDef, isParameter: Boolean = false) =
-    val fullName = if isParameter then List.empty
-      else List(attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
-        tree.symbol.enclosingDecl.fullName.path :+ tree.symbol.name)))
+    // val fullName = if isParameter then List.empty
+    //   else List(attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
+    //     tree.symbol.enclosingDecl.fullName.path :+ tree.symbol.name)))
     li(
       `class` := "jstree-open",
-      span(`class` := treeNodeType, "ValDef"),
-      span(`class` := treeSymbol, tree.symbol.asTerm.name.toString),
+      span(`class` := ViewStyles.treeNodeType, "ValDef"),
+      span(`class` := ViewStyles.treeSymbol, tree.symbol.asTerm.name.toString),
       ul(buildHtml(tree.rhs)),
-    )(fullName: _*)
+    )//(fullName: _*)
 
   def buildHtmlEmptyTree =
     li(
-      span(`class` := treeNodeType, "EmptyTree"),
+      span(`class` := ViewStyles.treeNodeType, "EmptyTree"),
     )
 
   def buildHtmlApply(tree: Apply) =
-    val args = if tree.args.isEmpty then List(li(span(`class` := treeNodeDesc, "(none)")))
+    val args = if tree.args.isEmpty then List(li(span(`class` := ViewStyles.treeNodeDesc, "(none)")))
       else tree.args.map(buildHtml)
     li(
-      span(`class` := treeNodeType, "Apply"),
+      span(`class` := ViewStyles.treeNodeType, "Apply"),
       `class` := "jstree-open",
       ul(
         li(
           `class` := "jstree-open",
-          span(`class` := treeNodeDesc, "function"),
+          span(`class` := ViewStyles.treeNodeDesc, "function"),
           ul(buildHtml(tree.fun)),
         ),
         li(
-          span(`class` := treeNodeDesc, "arguments"),
+          span(`class` := ViewStyles.treeNodeDesc, "arguments"),
           ul(args: _*),
         ),
       )
@@ -176,17 +167,17 @@ class PrettyPrinter(classpaths: Seq[String]):
 
   def buildHtmlSelect(tree: Select) =
     li(
-      span(`class` := treeNodeType, "Select"),
+      span(`class` := ViewStyles.treeNodeType, "Select"),
       `class` := "jstree-open",
       ul(
         li(
-          span(`class` := treeNodeDesc, "qualifier"),
+          span(`class` := ViewStyles.treeNodeDesc, "qualifier"),
           ul(buildHtml(tree.qualifier)),
         ),
         li(
-          span(`class` := treeSymbol, tree.name.toString),
-          attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
-            List(tree.name)))
+          span(`class` := ViewStyles.treeSymbol, tree.name.toString),
+          // attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
+          //   List(tree.name)))
         ),
       )
     )
