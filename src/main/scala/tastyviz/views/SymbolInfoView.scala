@@ -5,32 +5,30 @@ import scalajs.js.JSConverters.*
 
 import scalatags.JsDom.all.*
 import org.querki.jquery.*
-
-import tastyquery.Contexts.Context
 import tastyquery.Symbols.*
-import ViewConstants.*
+
 import tastyviz.models.TastySymbolModel
+import ViewConstants.*
 
-class SymbolInfoView(onClickSymbol: TastySymbolModel => Unit):
+class SymbolInfoView(onSelectionChange: Seq[Symbol] => Unit):
 
-  def reset()(using Context) =
+  def clear() = $(ViewDivs.symbolInfoView).empty()
+
+  def initialize() =
     $(ViewDivs.defTreeView).on("changed.jstree", { (event, data) =>
-      $(ViewDivs.symbolInfoView).empty()
-      data.asInstanceOf[js.Dynamic]
-        .selected.asInstanceOf[js.Array[String]]
-        .toSeq
-        .foreach { id =>
-          showSymbolInfo(TastySymbolModel(
-            ViewUtils.thisJSTree.get_node(id).data.getSymbol
-              .asInstanceOf[js.Function0[Symbol]]()))
-        }
+      onSelectionChange(
+        data.asInstanceOf[js.Dynamic]
+          .selected.asInstanceOf[js.Array[String]]
+          .toSeq
+          .map(ViewUtils.thisJSTree.get_node(_).data.getSymbol
+            .asInstanceOf[js.Function0[Symbol]]()))
     })
 
-  def showSymbolInfo(model: TastySymbolModel) =
+  def displaySymbolInfo(model: TastySymbolModel) =
     $(ViewDivs.symbolInfoView).append(
       buildSymbolInfoHtml(model).render.outerHTML)
 
-  def buildSymbolInfoHtml(model: TastySymbolModel) =
+  private def buildSymbolInfoHtml(model: TastySymbolModel) =
     div(
       `class` := ViewStyles.symbolInfoBox,
       div(

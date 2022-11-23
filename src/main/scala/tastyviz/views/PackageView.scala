@@ -34,9 +34,9 @@ class PackageView(
       ul(declarationLinks: _*),
     )
 
-  def showPackage(model: TastyPackageModel) =
-    $(ViewDivs.topLevelDivs).hide()
+  def clear() = $(ViewDivs.packageView).empty()
+
+  def displayPackage(model: TastyPackageModel) =
     $(ViewDivs.packageView)
-      .html(buildClasspathHtml.render.outerHTML)
+      .append(buildClasspathHtml.render)
       .append(buildPackageDeclarationsHtml(model).render)
-      .show()

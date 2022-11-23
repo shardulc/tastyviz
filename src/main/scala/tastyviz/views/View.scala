@@ -21,25 +21,30 @@ class View(
     classpath: List[String],
     onClickPackageDeclaration: TastySymbolModel => Unit,
     onClickPackageParent: () => Unit,
-    onClickSymbol: TastySymbolModel => Unit)(using Context):
+    onSelectionChange: Seq[Symbol] => Unit)(using Context):
 
-  val printer = PrettyPrinter()
-  val defTreeView = DefTreeView(printer)
-  val packageView = PackageView(
+  private val defTreeView = DefTreeView(onSelectionChange)
+  private val packageView = PackageView(
     classpath,
     onClickPackageDeclaration,
     onClickPackageParent)
-  val symbolInfoView = SymbolInfoView(onClickSymbol)
+  
 
-  def reset() =
+  def showPackageView() =
     $(ViewDivs.topLevelDivs).hide()
+    $(ViewDivs.packageView).show()
 
-  def showDefTree(model: TastyDefTreeModel) =
-    defTreeView.showDefTree(model)
-    symbolInfoView.reset()
+  def showDefTreeView() =
+    $(ViewDivs.topLevelDivs).hide()
+    $(ViewDivs.treeControl).add(ViewDivs.treeDisplay).show()
 
-  def showPackage(model: TastyPackageModel) =
-    packageView.showPackage(model)
+  def clearAndDisplayDefTree(model: TastyDefTreeModel) =
+    defTreeView.clear()
+    defTreeView.displayDefTree(model)
 
-  def showSymbolInfo(model: TastySymbolModel) =
-    symbolInfoView.showSymbolInfo(model)
+  def clearAndDisplayPackage(model: TastyPackageModel) =
+    packageView.clear()
+    packageView.displayPackage(model)
+
+  def clearSymbolInfo() = defTreeView.clearSymbolInfo()
+  def displaySymbolInfo(model: TastySymbolModel) = defTreeView.displaySymbolInfo(model)

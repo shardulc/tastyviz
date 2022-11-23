@@ -13,18 +13,24 @@ import tastyviz.views.jstreefacade.*
 import ViewConstants.*
 import ViewUtils.*
 
-class DefTreeView(printer: PrettyPrinter):
+class DefTreeView(onSelectionChange: Seq[tastyquery.Symbols.Symbol] => Unit)
+    (using Context):
+  private val printer = PrettyPrinter()
+  private val symbolInfoView = SymbolInfoView(onSelectionChange)
 
-  def showDefTree(model: TastyDefTreeModel) =
-    $(ViewDivs.topLevelDivs).hide()
+  def clear() =
+    $(ViewDivs.defTreeView).empty()
+    clearSymbolInfo()
+
+  def displayDefTree(model: TastyDefTreeModel) =
     val (result, symbols) = printer.show(model.tree)
-    $(ViewDivs.defTreeView).empty().append(result)
+    $(ViewDivs.defTreeView).append(result)
     initializeJSTree()
     symbols.foreachEntry((id, symbol) =>
       thisJSTree.get_node(id).data.getSymbol = {() => symbol})
+    symbolInfoView.initialize()
     $(ViewDivs.treeControl)
       .add(ViewDivs.treeDisplay)
-      .show()
 
   private object SearchDispatcher:
     private val timer = Timer()
@@ -78,10 +84,16 @@ class DefTreeView(printer: PrettyPrinter):
     $(ViewDivs.defTreeView)
       .on("click", { (event: JQueryEventObject) => event.stopPropagation() })
       .jstree(config)
-      .show()
     thisJSTree.open_node($(ViewDivs.defTreeView + " li").first())
     $(ViewControls.searchSymbols).keyup(() => SearchDispatcher.searchSymbols())
     $(ViewControls.searchNodes).keyup(() => SearchDispatcher.searchNodes())
     $(ViewControls.expandAll).click(() => thisJSTree.open_all())
     $(ViewControls.collapseAll).click(() => thisJSTree.close_all())
     $("body").click(() => thisJSTree.deselect_all())
+
+
+  def clearSymbolInfo() =
+    symbolInfoView.clear()
+
+  def displaySymbolInfo(model: TastySymbolModel) =
+    symbolInfoView.displaySymbolInfo(model)
