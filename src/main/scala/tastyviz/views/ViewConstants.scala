@@ -25,4 +25,6 @@ object ViewConstants:
     val treeNodeType: Class = "tv-treeNodeType"
     val treeNodeDesc: Class = "tv-treeNodeDesc"
     val treeSymbol: Class = "tv-treeSymbol"
-    val hidden: Class = "tv-hidden"
+
+    val symbolInfoBox: Class = "tv-symbolInfoBox"
+    val symbolInfoBoxDesc: Class = "tv-symbolInfoBoxDesc"

@@ -17,8 +17,11 @@ class DefTreeView(printer: PrettyPrinter):
 
   def showDefTree(model: TastyDefTreeModel) =
     $(ViewDivs.topLevelDivs).hide()
-    $(ViewDivs.defTreeView).html(printer.show(model.tree))
+    val (result, symbols) = printer.show(model.tree)
+    $(ViewDivs.defTreeView).empty().append(result)
     initializeJSTree()
+    symbols.foreachEntry((id, symbol) =>
+      thisJSTree.get_node(id).data.getSymbol = {() => symbol})
     $(ViewDivs.treeControl)
       .add(ViewDivs.treeDisplay)
       .show()

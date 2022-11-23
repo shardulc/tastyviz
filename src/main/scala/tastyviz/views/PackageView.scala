@@ -9,7 +9,7 @@ import ViewConstants.*
 
 class PackageView(
     classpath: List[String],
-    onClickPackageDeclaration: Symbol => Unit,
+    onClickPackageDeclaration: TastySymbolModel => Unit,
     onClickPackageParent: () => Unit):
 
   private def buildClasspathHtml =
@@ -22,7 +22,7 @@ class PackageView(
     val declarationLinks = model.declarations
       .sortWith(ViewUtils.symbolLt)
       .map(d => li(a(
-        ViewUtils.prettyPrintSymbol(d),
+        ViewUtils.prettyPrintSymbol(d.symbol),
         href := "javascript:void(0)",
         onclick := { () => onClickPackageDeclaration(d) })))
       .prepended(li(a(

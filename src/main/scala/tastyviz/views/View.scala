@@ -16,26 +16,12 @@ import java.util.TimerTask
 import ViewConstants.*
 import tastyviz.models.*
 
-/*
-to implement:
-
-.on('changed.jstree', function (e, action) {
-	$(treeSymbolInfoID).html("");
-	action.selected.forEach(function (id) {
-	    var selectedSymbol = $('#' + id);
-	    if (selectedSymbol.attr('tv-fullName')) {
-		$.get('/symbolInfo/' + selectedSymbol.attr('tv-fullName'), function (data) {
-		    $(treeSymbolInfoID).append(data);
-		});
-	    }
-	});
-    })
-*/
 
 class View(
     classpath: List[String],
-    onClickPackageDeclaration: Symbol => Unit,
-    onClickPackageParent: () => Unit)(using Context):
+    onClickPackageDeclaration: TastySymbolModel => Unit,
+    onClickPackageParent: () => Unit,
+    onClickSymbol: TastySymbolModel => Unit)(using Context):
 
   val printer = PrettyPrinter()
   val defTreeView = DefTreeView(printer)
@@ -43,12 +29,17 @@ class View(
     classpath,
     onClickPackageDeclaration,
     onClickPackageParent)
+  val symbolInfoView = SymbolInfoView(onClickSymbol)
 
-  def initialize() =
+  def reset() =
     $(ViewDivs.topLevelDivs).hide()
 
   def showDefTree(model: TastyDefTreeModel) =
     defTreeView.showDefTree(model)
+    symbolInfoView.reset()
 
   def showPackage(model: TastyPackageModel) =
     packageView.showPackage(model)
+
+  def showSymbolInfo(model: TastySymbolModel) =
+    symbolInfoView.showSymbolInfo(model)

@@ -1,145 +1,131 @@
 package tastyviz.views
 
 import java.nio.file.Paths
+import scala.collection.mutable
 
-import scalatags.Text.all.*
+import scalatags.JsDom.all.*
+import org.querki.jquery.*
 
-import tastyquery.Contexts
-import tastyquery.Contexts.*
+import tastyquery.Contexts.Context
 import tastyquery.Symbols.*
-import tastyquery.Names.FullyQualifiedName
 import tastyquery.Trees.*
-import scalatags.generic.TypedTag
 import tastyquery.Flags
-import tastyquery.Types.TermRef
+import tastyquery.Types.*
 
 import ViewConstants.*
 
 class PrettyPrinter(using Context):
 
-  def getSymbolInfo(fullName: FullyQualifiedName) =
-    val symbol = ctx.findSymbolFromRoot(fullName.path)
-    div(
-      `class` := "symbolInfoBox",
-      div(
-        span("fully qual'd name:", `class` := "symbolInfoBoxDesc"),
-        span(symbol.fullName.toString, `class` := ViewStyles.treeSymbol),
-      ),
-      div(
-        span("flags:", `class` := "symbolInfoBoxDesc"),
-        span(FlagsPrinter.print(symbol.flags)),
-      ),
-    )
-
-  def getDeclaration(fullName: FullyQualifiedName) =
-    ctx.findSymbolFromRoot(fullName.path).tree match
-      case Some(tree) =>
-        div(
-          id := ViewDivs.defTreeView,
-          ul(
-            buildHtml(tree.asInstanceOf[Tree]),
-          ),
-        )
-      case None => p("no deftree")
+  var currentID = 0
+  def freshID() =
+    currentID += 1
+    s"#tv-node$currentID"
 
   def show(tree: Tree) =
-    ul(buildHtml(tree)).render
+    val symbols = mutable.Map.empty[String, Symbol]
+    val result = $(ul(buildHtml(tree, symbols)).render.outerHTML)
+    (result, symbols)
 
-  def buildHtml(tree: Tree): Modifier =
+  def buildHtml(tree: Tree, symbols: mutable.Map[String, Symbol]): Modifier =
     tree match
-      case t: ClassDef => buildHtmlClassDef(t)
-      case t: Template => buildHtmlTemplate(t)
-      case t: DefDef => buildHtmlDefDef(t)
-      case t: ValDef => buildHtmlValDef(t)
+      case t: ClassDef => buildHtmlClassDef(t, symbols)
+      case t: Template => buildHtmlTemplate(t, symbols)
+      case t: DefDef => buildHtmlDefDef(t, symbols)
+      case t: ValDef => buildHtmlValDef(t, symbols)
       case EmptyTree => buildHtmlEmptyTree
-      case t: Apply => buildHtmlApply(t)
-      case t: Select => buildHtmlSelect(t)
+      case t: Apply => buildHtmlApply(t, symbols)
+      case t: Select => buildHtmlSelect(t, symbols)
       case t @ _ => li(span(`class` := ViewStyles.treeNodeType, t.getClass().getName()))
 
-  def buildHtmlClassDef(tree: ClassDef) =
+  def buildHtmlClassDef(tree: ClassDef, symbols: mutable.Map[String, Symbol]) =
+    val thisID = freshID()
+    symbols(thisID) = tree.symbol
     li(
-      // attr("tv-fullName") := FullNameCodec.encode(tree.symbol.fullName),
+      id := thisID,
       span(`class` := ViewStyles.treeNodeType, "ClassDef"),
-      span(`class` := ViewStyles.treeSymbol, tree.symbol.asType.name.toString),
-      ul(buildHtml(tree.rhs)),
+      span(
+        `class` := ViewStyles.treeSymbol,
+        tree.symbol.asType.name.toString),
+      ul(buildHtml(tree.rhs, symbols)),
     )
 
-  def buildHtmlTemplate(tree: Template) =
+  def buildHtmlTemplate(tree: Template, symbols: mutable.Map[String, Symbol]) =
     li(
       `class` := "jstree-open",
       span(`class` := ViewStyles.treeNodeType, "Template"),
       ul(
         li(
           span(`class` := ViewStyles.treeNodeDesc, "constructor"),
-          ul(buildHtmlDefDef(tree.constr)),
+          ul(buildHtmlDefDef(tree.constr, symbols)),
         ),
         li(
           span(`class` := ViewStyles.treeNodeDesc, "parents"),
           ul(tree.parents
             .filter(_.isInstanceOf[Tree])
             .map(_.asInstanceOf[Tree])
-            .map(buildHtml): _*),
+            .map(buildHtml(_, symbols)): _*),
         ),
         li(
           span(`class` := ViewStyles.treeNodeDesc, "self"),
-          ul(buildHtml(tree.self)),
+          ul(buildHtml(tree.self, symbols)),
         ),
         li(
           span(`class` := ViewStyles.treeNodeDesc, "body"),
-          ul(tree.body.map(buildHtml): _*),
+          ul(tree.body.map(buildHtml(_, symbols)): _*),
         ),
       )
     )
 
-  def buildHtmlDefDef(tree: DefDef) =
+  def buildHtmlDefDef(tree: DefDef, symbols: mutable.Map[String, Symbol]) =
+    val thisID = freshID()
+    symbols(thisID) = tree.symbol
     li(
-      // attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
-        // tree.symbol.enclosingDecl.fullName.path :+ tree.symbol.name)),
+      id := thisID,
       span(`class` := ViewStyles.treeNodeType, "DefDef"),
       span(`class` := ViewStyles.treeSymbol, tree.symbol.asTerm.name.toString),
       ul(
         li(
           span(`class` := ViewStyles.treeNodeDesc, "parameters"),
-          ul(tree.paramLists.map(buildHtmlParamsClause): _*),
+          ul(tree.paramLists.map(buildHtmlParamsClause(_, symbols)): _*),
         ),
         li(
           span(`class` := ViewStyles.treeNodeDesc, "right-hand side"),
-          ul(buildHtml(tree.rhs)),
+          ul(buildHtml(tree.rhs, symbols)),
         ),
       ),
     )
 
-  def buildHtmlParamsClause(params: ParamsClause) =
+  def buildHtmlParamsClause(params: ParamsClause, symbols: mutable.Map[String, Symbol]) =
     params match
       case Left(p) => li(
         span(`class` := ViewStyles.treeNodeDesc, "term parameters"),
         if p.isEmpty then ul(li(span(`class` := ViewStyles.treeNodeDesc, "(none)")))
-        else ul(p.map(buildHtmlValDef(_, isParameter = true)): _*),
+        else ul(p.map(buildHtmlValDef(_, symbols, isParameter = true)): _*),
       )
       case Right(p) => li(
         span(`class` := ViewStyles.treeNodeDesc, "type parameters"),
         span("can't handle these yet"),
       )
 
-  def buildHtmlValDef(tree: ValDef, isParameter: Boolean = false) =
-    // val fullName = if isParameter then List.empty
-    //   else List(attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
-    //     tree.symbol.enclosingDecl.fullName.path :+ tree.symbol.name)))
+  def buildHtmlValDef(tree: ValDef, symbols: mutable.Map[String, Symbol], isParameter: Boolean = false) =
+    val thisID = freshID()
+    symbols(thisID) = tree.symbol
     li(
+      id := thisID,
       `class` := "jstree-open",
       span(`class` := ViewStyles.treeNodeType, "ValDef"),
       span(`class` := ViewStyles.treeSymbol, tree.symbol.asTerm.name.toString),
-      ul(buildHtml(tree.rhs)),
-    )//(fullName: _*)
+      ul(buildHtml(tree.rhs, symbols)),
+    )
 
   def buildHtmlEmptyTree =
     li(
       span(`class` := ViewStyles.treeNodeType, "EmptyTree"),
     )
 
-  def buildHtmlApply(tree: Apply) =
+  def buildHtmlApply(tree: Apply, symbols: mutable.Map[String, Symbol]) =
     val args = if tree.args.isEmpty then List(li(span(`class` := ViewStyles.treeNodeDesc, "(none)")))
-      else tree.args.map(buildHtml)
+      else tree.args.map(buildHtml(_, symbols))
     li(
       span(`class` := ViewStyles.treeNodeType, "Apply"),
       `class` := "jstree-open",
@@ -147,7 +133,7 @@ class PrettyPrinter(using Context):
         li(
           `class` := "jstree-open",
           span(`class` := ViewStyles.treeNodeDesc, "function"),
-          ul(buildHtml(tree.fun)),
+          ul(buildHtml(tree.fun, symbols)),
         ),
         li(
           span(`class` := ViewStyles.treeNodeDesc, "arguments"),
@@ -156,19 +142,24 @@ class PrettyPrinter(using Context):
       )
     )
 
-  def buildHtmlSelect(tree: Select) =
+  def buildHtmlSelect(tree: Select, symbols: mutable.Map[String, Symbol]) =
+    val symbol = tree.tpe match
+      case t: NamedType => t.symbol
+      case t: PackageRef => t.symbol
+      case _ => NoSymbol
+    val thisID = freshID()
+    symbols(thisID) = symbol
     li(
       span(`class` := ViewStyles.treeNodeType, "Select"),
       `class` := "jstree-open",
       ul(
         li(
           span(`class` := ViewStyles.treeNodeDesc, "qualifier"),
-          ul(buildHtml(tree.qualifier)),
+          ul(buildHtml(tree.qualifier, symbols)),
         ),
         li(
-          span(`class` := ViewStyles.treeSymbol, tree.name.toString),
-          // attr("tv-fullName") := FullNameCodec.encode(FullyQualifiedName(
-          //   List(tree.name)))
+          id := thisID,
+          span(`class` := ViewStyles.treeSymbol, symbol.name.toString),
         ),
       )
     )

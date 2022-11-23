@@ -20,4 +20,6 @@ trait JSTree extends JQuery:
   def close_all(): Unit = js.native
   def deselect_all(): Unit = js.native
 
+  def get_node(id: String): js.Dynamic = js.native
+
 implicit def jq2jstree(jq: JQuery): JSTree = jq.asInstanceOf[JSTree]

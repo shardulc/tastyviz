@@ -8,9 +8,10 @@ import tastyquery.Trees.*
 sealed trait TastyModel(val symbol: Symbol)(using Context):
   val name = symbol.name
   val fullName = symbol.fullName
+  val flags = symbol.flags
 
 class TastyPackageModel(symbol: PackageSymbol)(using Context) extends TastyModel(symbol):
-  def declarations = symbol.declarations
+  def declarations = symbol.declarations.map(TastySymbolModel(_))
 
   def getDeclaration(decl: Symbol): Option[TastyModel] =
     symbol.getDecl(decl.name).flatMap(_ match
@@ -22,7 +23,7 @@ class TastyPackageModel(symbol: PackageSymbol)(using Context) extends TastyModel
 class TastyDefTreeModel(symbol: Symbol, val tree: Tree)(using Context)
     extends TastyModel(symbol)
 
-class TastySymbolInfoModel(symbol: Symbol)(using Context) extends TastyModel(symbol)
+class TastySymbolModel(symbol: Symbol)(using Context) extends TastyModel(symbol)
 
 
 class Model(using Context):
