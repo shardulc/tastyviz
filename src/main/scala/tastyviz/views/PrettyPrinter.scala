@@ -13,6 +13,7 @@ import tastyquery.Flags
 import tastyquery.Types.*
 
 import ViewConstants.*
+import scalatags.JsDom.TypedTag
 
 class PrettyPrinter(using Context):
 
@@ -21,12 +22,12 @@ class PrettyPrinter(using Context):
     currentID += 1
     s"#tv-node$currentID"
 
-  def show(tree: Tree) =
-    val symbols = mutable.Map.empty[String, Symbol]
-    val result = $(ul(buildHtml(tree, symbols)).render.outerHTML)
+  def buildHtml(tree: Tree): (TypedTag[_], mutable.Map[ID, Symbol]) =
+    val symbols = mutable.Map.empty[ID, Symbol]
+    val result = ul(buildHtml(tree, symbols))
     (result, symbols)
 
-  def buildHtml(tree: Tree, symbols: mutable.Map[String, Symbol]): Modifier =
+  def buildHtml(tree: Tree, symbols: mutable.Map[ID, Symbol]): Modifier =
     tree match
       case t: ClassDef => buildHtmlClassDef(t, symbols)
       case t: Template => buildHtmlTemplate(t, symbols)
@@ -37,7 +38,7 @@ class PrettyPrinter(using Context):
       case t: Select => buildHtmlSelect(t, symbols)
       case t @ _ => li(span(`class` := ViewStyles.treeNodeType, t.getClass().getName()))
 
-  def buildHtmlClassDef(tree: ClassDef, symbols: mutable.Map[String, Symbol]) =
+  def buildHtmlClassDef(tree: ClassDef, symbols: mutable.Map[ID, Symbol]) =
     val thisID = freshID()
     symbols(thisID) = tree.symbol
     li(
@@ -49,7 +50,7 @@ class PrettyPrinter(using Context):
       ul(buildHtml(tree.rhs, symbols)),
     )
 
-  def buildHtmlTemplate(tree: Template, symbols: mutable.Map[String, Symbol]) =
+  def buildHtmlTemplate(tree: Template, symbols: mutable.Map[ID, Symbol]) =
     li(
       `class` := "jstree-open",
       span(`class` := ViewStyles.treeNodeType, "Template"),
@@ -76,7 +77,7 @@ class PrettyPrinter(using Context):
       )
     )
 
-  def buildHtmlDefDef(tree: DefDef, symbols: mutable.Map[String, Symbol]) =
+  def buildHtmlDefDef(tree: DefDef, symbols: mutable.Map[ID, Symbol]) =
     val thisID = freshID()
     symbols(thisID) = tree.symbol
     li(
@@ -95,7 +96,7 @@ class PrettyPrinter(using Context):
       ),
     )
 
-  def buildHtmlParamsClause(params: ParamsClause, symbols: mutable.Map[String, Symbol]) =
+  def buildHtmlParamsClause(params: ParamsClause, symbols: mutable.Map[ID, Symbol]) =
     params match
       case Left(p) => li(
         span(`class` := ViewStyles.treeNodeDesc, "term parameters"),
@@ -107,7 +108,7 @@ class PrettyPrinter(using Context):
         span("can't handle these yet"),
       )
 
-  def buildHtmlValDef(tree: ValDef, symbols: mutable.Map[String, Symbol], isParameter: Boolean = false) =
+  def buildHtmlValDef(tree: ValDef, symbols: mutable.Map[ID, Symbol], isParameter: Boolean = false) =
     val thisID = freshID()
     symbols(thisID) = tree.symbol
     li(
@@ -123,7 +124,7 @@ class PrettyPrinter(using Context):
       span(`class` := ViewStyles.treeNodeType, "EmptyTree"),
     )
 
-  def buildHtmlApply(tree: Apply, symbols: mutable.Map[String, Symbol]) =
+  def buildHtmlApply(tree: Apply, symbols: mutable.Map[ID, Symbol]) =
     val args = if tree.args.isEmpty then List(li(span(`class` := ViewStyles.treeNodeDesc, "(none)")))
       else tree.args.map(buildHtml(_, symbols))
     li(
@@ -142,11 +143,16 @@ class PrettyPrinter(using Context):
       )
     )
 
-  def buildHtmlSelect(tree: Select, symbols: mutable.Map[String, Symbol]) =
-    val symbol = tree.tpe match
-      case t: NamedType => t.symbol
-      case t: PackageRef => t.symbol
-      case _ => NoSymbol
+  def buildHtmlSelect(tree: Select, symbols: mutable.Map[ID, Symbol]) =
+    val symbol = try {
+      tree.tpe match
+        case t: NamedType => t.symbol
+        case t: PackageRef => t.symbol
+        case _ => NoSymbol
+    } catch {
+      case e: tastyquery.Exceptions.MemberNotFoundException =>
+        NoSymbol
+    }
     val thisID = freshID()
     symbols(thisID) = symbol
     li(

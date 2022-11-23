@@ -16,7 +16,8 @@ class Controller(classpath: List[String])(using Context):
     classpath,
     onClickPackageDeclaration,
     onClickPackageParent,
-    onSelectionChange)
+    onSelectionChange,
+    onBackToPackage)
   val model = Model()
 
   def initialize() =
@@ -44,6 +45,10 @@ class Controller(classpath: List[String])(using Context):
   def onSelectionChange(symbols: Seq[Symbol]): Unit =
     view.clearSymbolInfo()
     symbols.foreach(s => view.displaySymbolInfo(TastySymbolModel(s)))
+
+  def onBackToPackage(): Unit =
+    view.clearAndDisplayPackage(packageStack.top)
+    view.showPackageView()
 
 
 object Controller:

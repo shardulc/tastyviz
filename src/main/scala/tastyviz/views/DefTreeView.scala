@@ -13,18 +13,21 @@ import tastyviz.views.jstreefacade.*
 import ViewConstants.*
 import ViewUtils.*
 
-class DefTreeView(onSelectionChange: Seq[tastyquery.Symbols.Symbol] => Unit)
-    (using Context):
+class DefTreeView(
+    onSelectionChange: Seq[tastyquery.Symbols.Symbol] => Unit,
+    onBackToPackage: () => Unit)(using Context):
   private val printer = PrettyPrinter()
   private val symbolInfoView = SymbolInfoView(onSelectionChange)
 
   def clear() =
+    // thisJSTree only works after first init
+    if $(ViewDivs.defTreeView).children("*").length > 0 then thisJSTree.destroy()
     $(ViewDivs.defTreeView).empty()
     clearSymbolInfo()
 
   def displayDefTree(model: TastyDefTreeModel) =
-    val (result, symbols) = printer.show(model.tree)
-    $(ViewDivs.defTreeView).append(result)
+    val (result, symbols) = printer.buildHtml(model.tree)
+    $(ViewDivs.defTreeView).append(result.render)
     initializeJSTree()
     symbols.foreachEntry((id, symbol) =>
       thisJSTree.get_node(id).data.getSymbol = {() => symbol})
@@ -89,6 +92,7 @@ class DefTreeView(onSelectionChange: Seq[tastyquery.Symbols.Symbol] => Unit)
     $(ViewControls.searchNodes).keyup(() => SearchDispatcher.searchNodes())
     $(ViewControls.expandAll).click(() => thisJSTree.open_all())
     $(ViewControls.collapseAll).click(() => thisJSTree.close_all())
+    $(ViewControls.backToPackage).click(() => onBackToPackage())
     $("body").click(() => thisJSTree.deselect_all())
 
 

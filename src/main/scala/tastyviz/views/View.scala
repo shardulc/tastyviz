@@ -21,9 +21,12 @@ class View(
     classpath: List[String],
     onClickPackageDeclaration: TastySymbolModel => Unit,
     onClickPackageParent: () => Unit,
-    onSelectionChange: Seq[Symbol] => Unit)(using Context):
+    onSelectionChange: Seq[Symbol] => Unit,
+    onBackToPackage: () => Unit)(using Context):
 
-  private val defTreeView = DefTreeView(onSelectionChange)
+  private val defTreeView = DefTreeView(
+    onSelectionChange,
+    onBackToPackage)
   private val packageView = PackageView(
     classpath,
     onClickPackageDeclaration,

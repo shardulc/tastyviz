@@ -20,11 +20,13 @@ object ViewConstants:
     val showTypes: ID = "#tv-showTypes"
     val searchSymbols: ID = "#tv-searchSymbols"
     val searchNodes: ID = "#tv-searchNodes"
+    val backToPackage: ID = "#tv-backToPackage"
 
   object ViewStyles:
     val treeNodeType: Class = "tv-treeNodeType"
     val treeNodeDesc: Class = "tv-treeNodeDesc"
     val treeSymbol: Class = "tv-treeSymbol"
+    val treeType: Class = "tv-treeType"
 
     val symbolInfoBox: Class = "tv-symbolInfoBox"
     val symbolInfoBoxDesc: Class = "tv-symbolInfoBoxDesc"

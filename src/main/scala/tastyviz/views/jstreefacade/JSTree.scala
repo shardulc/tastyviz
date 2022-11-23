@@ -11,6 +11,7 @@ trait JSTree extends JQuery:
   def jstree(): JSTree = js.native
   def jstree(config: JSTreeConfig): JSTree = js.native
   def jstree(b: Boolean): JSTree = js.native
+  def destroy(): Unit = js.native
 
   def search(s: String): Unit = js.native
   def clear_search(): Unit = js.native
