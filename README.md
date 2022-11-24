@@ -9,11 +9,11 @@ still a work in progress. Please report issues or request features on
 
 After cloning the repository:
 
- 1. Edit the file
-    `src/main/scala/tastyviz/controller/UserClasspath.scala` to add
-    URLs for the JARs you want to browse. If, as in the example, you
-    want to use a `localhost` URL, place the JAR under the `www/`
-    directory.
+ 1. Edit the file `src/main/scala/tastyviz/controller/Config.scala` to
+    specify the hostname at which you will serve TASTyViz
+    (`http://localhost:8080` will be fine in most cases) and URLs for
+    the JARs you want to browse. If, as in the example, your JARs are
+    also at `localhost` URLs, place them under the `www/` directory.
  1. Run `sbt copyToWWW` from the project root directory. This will
     populate the `www/` directory with all the files needed to serve
     TASTyViz on a web server.

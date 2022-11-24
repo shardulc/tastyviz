@@ -52,11 +52,10 @@ class Controller(classpath: List[String])(using Context):
 
 
 object Controller:
-  val host = "http://localhost:8080/"
   def main(args: Array[String]): Unit =
     val classpath = tastyviz.generated.JavaClasspaths.classpaths
-      .map(path => host + path)
-      .appendedAll(UserClasspath.classpath)
+      .map(path => Config.host + path)
+      .appendedAll(Config.classpath)
     ClasspathLoaders.read(classpath)
       .map(tastyquery.Contexts.init(_))
       .map{ ctx =>

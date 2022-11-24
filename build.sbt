@@ -4,6 +4,7 @@ ThisBuild / scalaVersion := "3.1.3"
 
 val rtJarOpt = taskKey[Option[String]]("Path to rt.jar if it exists")
 val javalibEntry = taskKey[String]("Path to rt.jar or \"jrt:/\"")
+val classpathJars = taskKey[Seq[String]]("paths to jars containing java and scala libs")
 val copyToWWW = taskKey[Unit]("copy jars to www")
 
 lazy val root = project.in(file("."))
@@ -47,16 +48,19 @@ lazy val root = project.in(file("."))
         targetRTJar.getAbsolutePath()
       }
     },
-    Compile / sourceGenerators += Def.task {
-      val file = (Compile / sourceManaged).value / "generated" / "JavaClasspaths.scala"
-      val q = "\""
-      val cpList = "List(" + (Compile / managedClasspath).value.seq
+    Compile / classpathJars := {
+      (Compile / managedClasspath).value.seq
         .map(_.data.absolutePath)
         .filter(_.contains("org/scala-lang/"))
         .+:((Compile / javalibEntry).value)
+    },
+    Compile / sourceGenerators += Def.task {
+      val file = (Compile / sourceManaged).value / "generated" / "JavaClasspaths.scala"
+      val q = "\""
+      val cpList = "List(" + ((Compile / classpathJars).value
         .map(path => path.split("/").last)
         .map(s => s"${q}${s}${q}")
-        .reduce((s1, s2) => s"${s1}, ${s2}") + ")"
+        .reduce((s1, s2) => s"${s1}, ${s2}")) + ")"
       IO.write(file, s"""
 package tastyviz.generated
 
@@ -76,18 +80,19 @@ object JavaClasspaths {
       output.data.publicModules.foreach{ module =>
         Files.copy(
           targetPath.resolve(module.jsFileName),
-          Path.of("www", module.jsFileName),
+          Paths.get("www", module.jsFileName),
           StandardCopyOption.REPLACE_EXISTING)
         module.sourceMapName.foreach(n => Files.copy(
           targetPath.resolve(n),
-          Path.of("www", n),
+          Paths.get("www", n),
           StandardCopyOption.REPLACE_EXISTING))
       }
-      val javalibPath = Path.of((Compile / javalibEntry).value)
-      Files.copy(
-        javalibPath,
-        Path.of("www", javalibPath.getFileName().toString()),
-        StandardCopyOption.REPLACE_EXISTING)
+      (Compile / classpathJars).value.foreach { path =>
+        val p = Paths.get(path)
+        Files.copy(
+          p,
+          Paths.get("www", p.getFileName().toString()),
+          StandardCopyOption.REPLACE_EXISTING)}
     },
   )
 
