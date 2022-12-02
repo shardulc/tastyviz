@@ -24,8 +24,15 @@ class Controller(classpath: List[String])(using Context):
         else "tpn" + name.toString
       else "tm" + name.toString
 
-    def encode(fqn: List[Name]) =
-      fqn.map(encodeName).mkString("#", "/", "")
+    private def symbolToFullName(symbol: Symbol): List[Name] =
+      if symbol.isPackage
+      then symbol.fullName.path
+      else symbol.owner match
+        case null => List(symbol.name)
+        case o: Symbol => symbolToFullName(o) :+ symbol.name
+
+    def encode(symbol: Symbol) =
+      symbolToFullName(symbol).map(encodeName).mkString("#", "/", "")
 
     private def decodeName(name: String) =
       if name == defn.RootPackage.name.toString
@@ -43,7 +50,7 @@ class Controller(classpath: List[String])(using Context):
 
     def show(model: TastyModel, replace: Boolean = false) =
       current = model
-      val hash = encode(model.fullName.path)
+      val hash = encode(model.symbol)
       if replace then HistoryFacade.replaceState(null, "", hash)
       else HistoryFacade.pushState(null, "", hash)
       model match

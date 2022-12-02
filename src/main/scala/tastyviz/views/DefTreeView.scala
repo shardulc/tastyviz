@@ -16,7 +16,7 @@ import ViewUtils.*
 class DefTreeView(
     onSelectionChange: Seq[tastyquery.Symbols.Symbol] => Unit,
     onClickOwner: () => Unit,
-    encode: List[tastyquery.Names.Name] => String)(using Context):
+    encode: tastyquery.Symbols.Symbol => String)(using Context):
   private val printer = PrettyPrinter()
   private val symbolInfoView = SymbolInfoView(onSelectionChange, encode)
 

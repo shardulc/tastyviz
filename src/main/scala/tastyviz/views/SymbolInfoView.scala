@@ -12,7 +12,7 @@ import ViewConstants.*
 
 class SymbolInfoView(
     onSelectionChange: Seq[Symbol] => Unit,
-    encode: List[tastyquery.Names.Name] => String):
+    encode: Symbol => String):
 
   def clear() = $(ViewDivs.symbolInfoView).empty()
 
@@ -23,7 +23,9 @@ class SymbolInfoView(
           .selected.asInstanceOf[js.Array[String]]
           .toSeq
           .map(ViewUtils.thisJSTree.get_node(_).data.getSymbol
-            .asInstanceOf[js.Function0[Symbol]]()))
+            .asInstanceOf[js.UndefOr[js.Function0[Symbol]]]
+            .map(_.apply()).toOption)
+          .collect { case Some(s) => s })
     })
 
   def displaySymbolInfo(model: TastySymbolModel) =
@@ -31,11 +33,12 @@ class SymbolInfoView(
       buildSymbolInfoHtml(model).render.outerHTML)
 
   private def buildSymbolInfoHtml(model: TastySymbolModel) =
-    val fullNameLinks = (1 to model.fullName.path.length)
-      .map(model.fullName.path.take(_))
-      .map(subpath => a(
-        href := encode(subpath),
-        subpath.last.toString,
+    val fullNameLinks = Seq.unfold[Symbol, Option[Symbol]](Some(model.symbol))
+        (s => s.map(ss => (ss, if ss.owner == null then None else Some(ss.owner))))
+      .reverse
+      .map(sub => a(
+        href := encode(sub),
+        sub.name.toString,
       ))
       .flatMap(a => Seq(a, span(".")))
       .dropRight(1)

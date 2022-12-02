@@ -22,7 +22,7 @@ class View(
     onClickPackageDeclaration: TastyModel => Unit,
     onClickOwner: () => Unit,
     onSelectionChange: Seq[Symbol] => Unit,
-    encode: List[tastyquery.Names.Name] => String)(using Context):
+    encode: Symbol => String)(using Context):
 
   private val defTreeView = DefTreeView(
     onSelectionChange,
