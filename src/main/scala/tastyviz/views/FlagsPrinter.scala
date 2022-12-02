@@ -29,8 +29,6 @@ object FlagsPrinter:
     Flags.Macro -> "macro",
     Flags.Method -> "method",
     Flags.Module -> "module",
-    Flags.ModuleVal -> "module val",
-    Flags.ModuleClass -> "module class",
     Flags.Mutable -> "mutable",
     Flags.NoInitsInterface -> "no inits interface",
     Flags.Opaque -> "opaque",

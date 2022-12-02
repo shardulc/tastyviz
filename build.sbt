@@ -15,8 +15,7 @@ lazy val root = project.in(file("."))
     // scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) },
 
     libraryDependencies ++= Seq(
-      "ch.epfl.scala" %%% "tasty-query" % "0.2.0",
-      // "ch.epfl.scala" %%% "tasty-query" % "0.0.0+555-aeac5431+20221110-1518-SNAPSHOT",
+      "ch.epfl.scala" %%% "tasty-query" % "0.4.0",
       "com.lihaoyi" %%% "scalatags" % "0.11.0",
       "org.querki" %%% "jquery-facade" % "2.1",
     ),

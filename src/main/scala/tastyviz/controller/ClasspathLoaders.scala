@@ -14,7 +14,6 @@ import org.scalajs.dom.URL
 
 import tastyquery.Classpaths.*
 
-
 /** Classpath loaders using the JS DOM fetch() API.
   *
   * This API is specific to Scala.js when used in the browser with the
@@ -43,16 +42,38 @@ object ClasspathLoaders:
     *       the returned [[Classpaths.Classpath]] correspond to the elements of `classpath`.
     */
   def read(classpath: List[String])(using ExecutionContext): Future[Classpath] =
-    val allFilesFuture = Future
+    val allEntriesFuture = Future
       .traverse(classpath) { entry =>
         if entry.endsWith(".jar") then
           fromRemoteJarFile(entry)
         else
           throw new IllegalArgumentException("Illegal classpath entry: " + entry)
       }
-      .map(_.flatten)
+      // .map(_.flatten)
 
-    for allFiles <- allFilesFuture yield
+    def compressPackages(allFiles: Seq[FileContent]): Iterable[PackageData] =
+      allFiles
+        .groupMap[String, ClassData | TastyData](_.packagePath) { fileContent =>
+          val isClassFile = fileContent.name.endsWith(".class")
+          val binaryName =
+            if isClassFile then fileContent.name.stripSuffix(".class")
+            else fileContent.name.stripSuffix(".tasty")
+          if isClassFile then ClassData(binaryName, fileContent.debugPath, fileContent.content)
+          else TastyData(binaryName, fileContent.debugPath, fileContent.content)
+        }
+        .map { (packagePath, classAndTastys) =>
+          val packageName = packagePath.replace('/', '.').nn
+          val (classes, tastys) = classAndTastys.partitionMap {
+            case classData: ClassData => Left(classData)
+            case tastyData: TastyData => Right(tastyData)
+          }
+          PackageData(packageName, IArray.from(classes.sortBy(_.binaryName)), IArray.from(tastys.sortBy(_.binaryName)))
+        }
+
+    for allEntries <- allEntriesFuture yield
+      val compressedEntries = allEntries.map(compressPackages andThen IArray.from)
+      Classpath.from(compressedEntries)
+    /*for allFiles <- allFilesFuture yield
       val allPackageDatas =
         allFiles
           .groupMap[String, ClassData | TastyData](_.packagePath) { fileContent =>
@@ -77,7 +98,7 @@ object ClasspathLoaders:
           }
       end allPackageDatas
 
-      Classpath.from(IArray.from(allPackageDatas))
+      Classpath.from(IArray.from(allPackageDatas))*/
     end for
   end read
 

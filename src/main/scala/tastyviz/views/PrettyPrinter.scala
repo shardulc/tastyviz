@@ -1,20 +1,20 @@
 package tastyviz.views
 
-import java.nio.file.Paths
 import scala.collection.mutable
 
 import scalatags.JsDom.all.*
-import org.querki.jquery.*
+import scalatags.JsDom.TypedTag
 
 import tastyquery.Contexts.Context
+import tastyquery.Exceptions.MemberNotFoundException
 import tastyquery.Symbols.*
 import tastyquery.Trees.*
 import tastyquery.Flags
 import tastyquery.Types.*
-import tastyquery.TypeTrees.TypeIdent
 
 import ViewConstants.*
-import scalatags.JsDom.TypedTag
+import scala.util.control.NonFatal.apply
+
 
 class PrettyPrinter(using Context):
   type IDSymbolMap = mutable.Map[ID, Symbol]
@@ -36,7 +36,6 @@ class PrettyPrinter(using Context):
       case t: Template => buildHtmlTemplate(t, symbols)
       case t: DefDef => buildHtmlDefDef(t, symbols)
       case t: ValDef => buildHtmlValDef(t, symbols)
-      case EmptyTree => buildHtmlEmptyTree
       case t: Block => buildHtmlBlock(t, symbols)
       case t: Apply => buildHtmlApply(t, symbols)
       case t: Select => buildHtmlSelect(t, symbols)
@@ -61,16 +60,15 @@ class PrettyPrinter(using Context):
     )
 
   def buildHtmlNew(tree: New, symbols: IDSymbolMap) =
-    val symbol = tree.tpe.asInstanceOf[TypeRef].symbol
-    val thisID = freshID()
-    symbols(thisID) = symbol
-    li(
-      id := thisID,
-      span(`class` := ViewStyles.treeNodeType, "New"),
-      span(`class` := ViewStyles.treeSymbol, symbol.name.toString),
-    )
+    symbolToNode(typeToSymbol(tree.tpe), "New", symbols)
 
   def buildHtmlTemplate(tree: Template, symbols: IDSymbolMap) =
+    val parents = tree.parents.map(_ match
+      case t: (Apply | Block) =>
+        buildHtml(t, symbols)
+      case t: TypeTree =>
+        buildHtmlTypeTree(t, symbols)
+    )
     li(
       `class` := "jstree-open",
       span(`class` := ViewStyles.treeNodeType, "Template"),
@@ -81,16 +79,16 @@ class PrettyPrinter(using Context):
         ),
         li(
           span(`class` := ViewStyles.treeNodeDesc, "parents"),
-          ul(tree.parents
-            .filter(_.isInstanceOf[Tree])
-            .map(_.asInstanceOf[Tree])
-            .map(buildHtml(_, symbols)): _*),
+          ul(parents: _*),
         ),
         li(
           span(`class` := ViewStyles.treeNodeDesc, "self"),
-          ul(buildHtml(tree.self, symbols)),
+          tree.self.fold(
+            span(`class` := ViewStyles.treeNodeDesc, "(none)")
+          )(t => ul(buildHtml(t, symbols))),
         ),
         li(
+          `class` := "jstree-open",
           span(`class` := ViewStyles.treeNodeDesc, "body"),
           ul(tree.body.map(buildHtml(_, symbols)): _*),
         ),
@@ -111,7 +109,9 @@ class PrettyPrinter(using Context):
         ),
         li(
           span(`class` := ViewStyles.treeNodeDesc, "right-hand side"),
-          ul(buildHtml(tree.rhs, symbols)),
+          tree.rhs.fold(
+            span(`class` := ViewStyles.treeNodeDesc, "(none)")
+          )(t => ul(buildHtml(t, symbols))),
         ),
       ),
     )
@@ -136,12 +136,9 @@ class PrettyPrinter(using Context):
       `class` := "jstree-open",
       span(`class` := ViewStyles.treeNodeType, "ValDef"),
       span(`class` := ViewStyles.treeSymbol, tree.symbol.asTerm.name.toString),
-      ul(buildHtml(tree.rhs, symbols)),
-    )
-
-  def buildHtmlEmptyTree =
-    li(
-      span(`class` := ViewStyles.treeNodeType, "EmptyTree"),
+      tree.rhs.fold(
+        span(`class` := ViewStyles.treeNodeDesc, "(no right-hand side)")
+      )(t => ul(buildHtml(t, symbols))),
     )
 
   def buildHtmlBlock(tree: Block, symbols: IDSymbolMap) =
@@ -171,29 +168,17 @@ class PrettyPrinter(using Context):
     )
 
   def buildHtmlSelect(tree: Select, symbols: IDSymbolMap) =
-    val symbol = try {
-      tree.tpe match
-        case t: NamedType => t.symbol
-        case t: PackageRef => t.symbol
-        case _ => NoSymbol
-    } catch {
-      case scala.util.control.NonFatal(e) =>
-        NoSymbol
-    }
-    val thisID = freshID()
-    symbols(thisID) = symbol
+    val symbolElem = symbolToNode(treeToSymbol(tree), "", symbols)
     li(
       span(`class` := ViewStyles.treeNodeType, "Select"),
       `class` := "jstree-open",
       ul(
         li(
           span(`class` := ViewStyles.treeNodeDesc, "qualifier"),
+          `class` := "jstree-open",
           ul(buildHtml(tree.qualifier, symbols)),
         ),
-        li(
-          id := thisID,
-          span(`class` := ViewStyles.treeSymbol, symbol.name.toString),
-        ),
+        symbolElem,
       )
     )
 
@@ -205,24 +190,10 @@ class PrettyPrinter(using Context):
     )
 
   def buildHtmlIdent(tree: Ident, symbols: IDSymbolMap) =
-    val symbol = tree.tpe.asInstanceOf[TermRef].symbol
-    val thisID = freshID()
-    symbols(thisID) = symbol
-    li(
-      id := thisID,
-      span(`class` := ViewStyles.treeNodeType, "Ident"),
-      span(`class` := ViewStyles.treeSymbol, symbol.name.toString),
-    )
+    symbolToNode(treeToSymbol(tree), "Ident", symbols)
 
-  def buildHtmlTypeIdent(tree: TypeIdent, symbols: IDSymbolMap) =
-    val symbol = tree.toType.asInstanceOf[TypeRef].symbol
-    val thisID = freshID()
-    symbols(thisID) = symbol
-    li(
-      id := thisID,
-      span(`class` := ViewStyles.treeNodeType, "TypeIdent"),
-      span(`class` := ViewStyles.treeSymbol, symbol.name.toString),
-    )
+  def buildHtmlTypeTree(tree: TypeTree, symbols: IDSymbolMap) =
+    symbolToNode(typeToSymbol(tree.toType), "TypeTree", symbols)
 
   def buildHtmlLiteral(tree: Literal, symbols: IDSymbolMap) =
     li(
@@ -231,10 +202,10 @@ class PrettyPrinter(using Context):
     )
 
   def buildHtmlThis(tree: This, symbols: IDSymbolMap) =
-    val thisLI = li(
+    li(
       span(`class` := ViewStyles.treeNodeType, "This"),
+      ul(buildHtmlTypeTree(tree.qualifier, symbols)),
     )
-    tree.qualifier.fold(thisLI)(q => thisLI(ul(buildHtmlTypeIdent(q, symbols))))
 
   def buildHtmlAssign(tree: Assign, symbols: IDSymbolMap) =
     li(
@@ -253,3 +224,37 @@ class PrettyPrinter(using Context):
         ),
       ),
     )
+
+  def treeToSymbol(t: TermTree) =
+    try {
+      typeToSymbol(t.tpe)
+    } catch {
+      case util.control.NonFatal(e) => None
+    }
+
+  def typeToSymbol(t: Type): Option[Symbol] =
+    try {
+      t match
+        case t: TermRef => Some(t.symbol)
+        case t: TypeRef => Some(t.symbol)
+        case t: PackageRef => Some(t.symbol)
+        case _ => None
+    } catch {
+      case util.control.NonFatal(e) => None
+    }
+
+  def symbolToNode(s: Option[Symbol], t: String, symbols: IDSymbolMap) =
+    s.fold(
+      li(
+        span(`class` := ViewStyles.treeNodeType, t),
+        span(`class` := ViewStyles.treeSymbol, "(not found)"),
+      )
+    ){ symbol =>
+      val thisID = freshID()
+      symbols(thisID) = symbol
+      li(
+        id := thisID,
+        span(`class` := ViewStyles.treeNodeType, t),
+        span(`class` := ViewStyles.treeSymbol, symbol.name.toString),
+      )
+    }

@@ -28,7 +28,6 @@ object ViewUtils:
           case _ => s1.name.toString < s2.name.toString
 
   def prettyPrintSymbol(s: Symbol): String = s match
-    case NoSymbol => "<no symbol>"
     case _: PackageSymbol =>
       if s.isRoot then "package <root>"
       else s"package ${s.fullName.toString}"
