@@ -20,7 +20,7 @@ object ViewConstants:
     val showTypes: ID = "#tv-showTypes"
     val searchSymbols: ID = "#tv-searchSymbols"
     val searchNodes: ID = "#tv-searchNodes"
-    val backToPackage: ID = "#tv-backToPackage"
+    val backToOwner: ID = "#tv-backToOwner"
 
   object ViewStyles:
     val treeNodeType: Class = "tv-treeNodeType"

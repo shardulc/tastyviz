@@ -15,9 +15,15 @@ import ViewUtils.*
 
 class DefTreeView(
     onSelectionChange: Seq[tastyquery.Symbols.Symbol] => Unit,
-    onBackToPackage: () => Unit)(using Context):
+    onClickOwner: () => Unit,
+    encode: List[tastyquery.Names.Name] => String)(using Context):
   private val printer = PrettyPrinter()
-  private val symbolInfoView = SymbolInfoView(onSelectionChange)
+  private val symbolInfoView = SymbolInfoView(onSelectionChange, encode)
+
+  $(ViewControls.backToOwner).click { (e: JQEvt) =>
+    e.preventDefault()
+    onClickOwner()
+  }
 
   def clear() =
     // thisJSTree only works after first init
@@ -92,8 +98,6 @@ class DefTreeView(
     $(ViewControls.searchNodes).keyup(() => SearchDispatcher.searchNodes())
     $(ViewControls.expandAll).click(() => thisJSTree.open_all())
     $(ViewControls.collapseAll).click(() => thisJSTree.close_all())
-    $(ViewControls.backToPackage).click(() => onBackToPackage())
-    $("body").click(() => thisJSTree.deselect_all())
 
 
   def clearSymbolInfo() =

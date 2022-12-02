@@ -19,18 +19,19 @@ import tastyviz.models.*
 
 class View(
     classpath: List[String],
-    onClickPackageDeclaration: TastySymbolModel => Unit,
-    onClickPackageParent: () => Unit,
+    onClickPackageDeclaration: TastyModel => Unit,
+    onClickOwner: () => Unit,
     onSelectionChange: Seq[Symbol] => Unit,
-    onBackToPackage: () => Unit)(using Context):
+    encode: List[tastyquery.Names.Name] => String)(using Context):
 
   private val defTreeView = DefTreeView(
     onSelectionChange,
-    onBackToPackage)
+    onClickOwner,
+    encode)
   private val packageView = PackageView(
     classpath,
     onClickPackageDeclaration,
-    onClickPackageParent)
+    onClickOwner)
   
 
   def showPackageView() =

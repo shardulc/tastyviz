@@ -10,7 +10,9 @@ import tastyquery.Symbols.*
 import tastyviz.models.TastySymbolModel
 import ViewConstants.*
 
-class SymbolInfoView(onSelectionChange: Seq[Symbol] => Unit):
+class SymbolInfoView(
+    onSelectionChange: Seq[Symbol] => Unit,
+    encode: List[tastyquery.Names.Name] => String):
 
   def clear() = $(ViewDivs.symbolInfoView).empty()
 
@@ -29,11 +31,19 @@ class SymbolInfoView(onSelectionChange: Seq[Symbol] => Unit):
       buildSymbolInfoHtml(model).render.outerHTML)
 
   private def buildSymbolInfoHtml(model: TastySymbolModel) =
+    val fullNameLinks = (1 to model.fullName.path.length)
+      .map(model.fullName.path.take(_))
+      .map(subpath => a(
+        href := encode(subpath),
+        subpath.last.toString,
+      ))
+      .flatMap(a => Seq(a, span(".")))
+      .dropRight(1)
     div(
       `class` := ViewStyles.symbolInfoBox,
       div(
         span("fully qual'd name:", `class` := ViewStyles.symbolInfoBoxDesc),
-        span(model.fullName.toString, `class` := ViewStyles.treeSymbol),
+        div(`class` := ViewStyles.treeSymbol)(fullNameLinks: _*)
       ),
       div(
         span("flags:", `class` := ViewStyles.symbolInfoBoxDesc),
