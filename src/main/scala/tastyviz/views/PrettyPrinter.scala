@@ -43,6 +43,7 @@ class PrettyPrinter(using Context):
       case t: Typed => buildHtml(t.expr, symbols)
       case t: Ident => buildHtmlIdent(t, symbols)
       case t: Literal => buildHtmlLiteral(t, symbols)
+      case t: SeqLiteral => buildHtmlSeqLiteral(t, symbols)
       case t: This => buildHtmlThis(t, symbols)
       case t: Assign => buildHtmlAssign(t, symbols)
       case t @ _ => li(span(`class` := ViewStyles.treeNodeType, t.getClass().getName()))
@@ -204,8 +205,18 @@ class PrettyPrinter(using Context):
 
   def buildHtmlLiteral(tree: Literal, symbols: IDSymbolMap) =
     li(
-      span(`class` := ViewStyles.treeNodeType, "Constant"),
-      span(`class` := ViewStyles.treeSymbol, tree.constant.value.toString),
+      span(`class` := ViewStyles.treeNodeType, "Literal"),
+      span(`class` := ViewStyles.treeNodeDesc, tree.constant.value match
+        case null => "null"
+        case v @ _ => v.toString),
+    )
+
+  def buildHtmlSeqLiteral(tree: SeqLiteral, symbols: IDSymbolMap) =
+    li(
+      span(`class` := ViewStyles.treeNodeType, "SeqLiteral"),
+      `class` := "jstree-open",
+      if tree.elems.isEmpty then ul(li(span(`class` := ViewStyles.treeNodeDesc, "(empty)")))
+      else ul(tree.elems.map(buildHtml(_, symbols)): _*),
     )
 
   def buildHtmlThis(tree: This, symbols: IDSymbolMap) =
@@ -254,7 +265,7 @@ class PrettyPrinter(using Context):
     s.fold(
       li(
         span(`class` := ViewStyles.treeNodeType, t),
-        span(`class` := ViewStyles.treeSymbol, "(not found)"),
+        span(`class` := ViewStyles.treeNodeDesc, "(not found)"),
       )
     ){ symbol =>
       val thisID = freshID()
