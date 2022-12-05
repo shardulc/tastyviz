@@ -25,7 +25,8 @@ class TastyDefTreeModel(symbol: Symbol, val tree: Tree, owner: TastyModel)(using
     extends TastyModel(symbol, Some(owner))
 
 class TastySymbolModel(symbol: Symbol, owner: TastyModel)(using Context)
-    extends TastyModel(symbol, Some(owner))
+    extends TastyModel(symbol, Some(owner)):
+  val tpe = if symbol.isTerm then Some(symbol.asTerm.declaredType) else None
 
 
 class Model(using Context):

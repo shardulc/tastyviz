@@ -102,6 +102,7 @@ class PrettyPrinter(using Context):
       id := thisID,
       span(`class` := ViewStyles.treeNodeType, "DefDef"),
       span(`class` := ViewStyles.treeSymbol, tree.symbol.asTerm.name.toString),
+      span(`class` := ViewStyles.treeType, ": " + ViewUtils.prettyPrintType(tree.symbol.declaredType)),
       ul(
         li(
           span(`class` := ViewStyles.treeNodeDesc, "parameters"),
@@ -131,15 +132,21 @@ class PrettyPrinter(using Context):
   def buildHtmlValDef(tree: ValDef, symbols: IDSymbolMap, isParameter: Boolean = false) =
     val thisID = freshID()
     symbols(thisID) = tree.symbol
-    li(
+    val elem = li(
       id := thisID,
       `class` := "jstree-open",
       span(`class` := ViewStyles.treeNodeType, "ValDef"),
       span(`class` := ViewStyles.treeSymbol, tree.symbol.asTerm.name.toString),
-      tree.rhs.fold(
-        span(`class` := ViewStyles.treeNodeDesc, "(no right-hand side)")
-      )(t => ul(buildHtml(t, symbols))),
     )
+    val typeSpan = span(`class` := ViewStyles.treeType,
+      ": " + ViewUtils.prettyPrintType(tree.symbol.declaredType))
+    tree.rhs.fold(elem(
+      span(`class` := ViewStyles.treeNodeDesc, "(no right-hand side)"),
+      typeSpan,
+    ))(t => elem(
+      typeSpan,
+      ul(buildHtml(t, symbols))
+    ))
 
   def buildHtmlBlock(tree: Block, symbols: IDSymbolMap) =
     li(
@@ -252,9 +259,13 @@ class PrettyPrinter(using Context):
     ){ symbol =>
       val thisID = freshID()
       symbols(thisID) = symbol
-      li(
+      val elem = li(
         id := thisID,
         span(`class` := ViewStyles.treeNodeType, t),
         span(`class` := ViewStyles.treeSymbol, symbol.name.toString),
       )
+      if symbol.isTerm
+      then elem(span(`class` := ViewStyles.treeType,
+        ": " + ViewUtils.prettyPrintType(symbol.asTerm.declaredType)))
+      else elem
     }

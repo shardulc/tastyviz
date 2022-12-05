@@ -14,9 +14,9 @@ class SymbolInfoView(
     onSelectionChange: Seq[Symbol] => Unit,
     encode: Symbol => String):
 
-  def clear() = $(ViewDivs.symbolInfoView).empty()
+  def clear(): Unit = $(ViewDivs.symbolInfoView).empty()
 
-  def initialize() =
+  def initialize(): Unit =
     $(ViewDivs.defTreeView).on("changed.jstree", { (event, data) =>
       onSelectionChange(
         data.asInstanceOf[js.Dynamic]
@@ -28,7 +28,7 @@ class SymbolInfoView(
           .collect { case Some(s) => s })
     })
 
-  def displaySymbolInfo(model: TastySymbolModel) =
+  def displaySymbolInfo(model: TastySymbolModel): Unit =
     $(ViewDivs.symbolInfoView).append(
       buildSymbolInfoHtml(model).render.outerHTML)
 
@@ -51,5 +51,9 @@ class SymbolInfoView(
       div(
         span("flags:", `class` := ViewStyles.symbolInfoBoxDesc),
         span(FlagsPrinter.print(model.flags)),
+      ),
+      div(
+        span("type:", `class` := ViewStyles.symbolInfoBoxDesc),
+        span(model.tpe.fold("(this is not a TermSymbol)")(ViewUtils.prettyPrintType)),
       ),
     )

@@ -2,10 +2,12 @@ package tastyviz.views
 
 import org.querki.jquery.*
 import tastyquery.Symbols.*
+import tastyquery.Types.*
 
 import tastyviz.models.*
 import tastyviz.views.jstreefacade.*
 import ViewConstants.*
+
 
 object ViewUtils:
   def thisJSTree: JSTree = $(ViewDivs.defTreeView).jstree(true)
@@ -34,3 +36,26 @@ object ViewUtils:
     case _: TermSymbol => s.name.toString
     case _: ClassSymbol => s"class ${s.name.toString}"
     case _ => s.toString
+
+
+  def prettyPrintType(t: Type): String =
+    val printed = prettyPrintTypeHelper(t)
+    if printed.startsWith("scala.Predef.") then printed.drop(13)
+    else if printed.startsWith("scala.") then printed.drop(6)
+    else printed
+
+  private def prettyPrintTypeHelper(t: Type): String = t match
+    case t: NamedType =>
+      val prefix = t.prefix match
+        case NoPrefix => ""
+        case p: Type => prettyPrintType(p) + "."
+      prefix + t.name
+    case t: PackageRef => t.fullyQualifiedName.toString
+    case t: MethodType =>
+      t.paramTypes.map(prettyPrintType).mkString("(", ", ", ")")
+        + " => " + prettyPrintType(t.resultType)
+    case t: AppliedType =>
+      prettyPrintType(t.tycon)
+        + t.args.map(prettyPrintType).mkString("[", ", ", "]")
+    case t: ThisType => s"this[${prettyPrintType(t.tref)}]"
+    case _ => t.toString

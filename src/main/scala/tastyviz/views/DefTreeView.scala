@@ -25,21 +25,27 @@ class DefTreeView(
     onClickOwner()
   }
 
-  def clear() =
+  def showHideTypesHandler(box: org.scalajs.dom.Element) =
+    box match
+      case b: org.scalajs.dom.HTMLInputElement =>
+        if b.checked then $("." + ViewStyles.treeType).show()
+        else $("." + ViewStyles.treeType).hide()
+      case _ => ()
+  $(ViewControls.showTypes).change(showHideTypesHandler)
+
+  def clear(): Unit =
     // thisJSTree only works after first init
     if $(ViewDivs.defTreeView).children("*").length > 0 then thisJSTree.destroy()
     $(ViewDivs.defTreeView).empty()
     clearSymbolInfo()
 
-  def displayDefTree(model: TastyDefTreeModel) =
+  def displayDefTree(model: TastyDefTreeModel): Unit =
     val (result, symbols) = printer.buildHtml(model.tree)
     $(ViewDivs.defTreeView).append(result.render)
     initializeJSTree()
     symbols.foreachEntry((id, symbol) =>
       thisJSTree.get_node(id).data.getSymbol = {() => symbol})
     symbolInfoView.initialize()
-    $(ViewDivs.treeControl)
-      .add(ViewDivs.treeDisplay)
 
   private object SearchDispatcher:
     private val timer = Timer()
@@ -92,6 +98,8 @@ class DefTreeView(
       )
     $(ViewDivs.defTreeView)
       .on("click", { (event: JQueryEventObject) => event.stopPropagation() })
+      .on("after_open.jstree after_close.jstree open_all.jstree close_all.jstree",
+        {() => showHideTypesHandler($(ViewControls.showTypes)(0))})
       .jstree(config)
     thisJSTree.open_node($(ViewDivs.defTreeView + " li").first())
     $(ViewControls.searchSymbols).keyup(() => SearchDispatcher.searchSymbols())
@@ -100,8 +108,8 @@ class DefTreeView(
     $(ViewControls.collapseAll).click(() => thisJSTree.close_all())
 
 
-  def clearSymbolInfo() =
+  def clearSymbolInfo(): Unit =
     symbolInfoView.clear()
 
-  def displaySymbolInfo(model: TastySymbolModel) =
+  def displaySymbolInfo(model: TastySymbolModel): Unit =
     symbolInfoView.displaySymbolInfo(model)

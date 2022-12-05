@@ -36,12 +36,20 @@ div#tv-defTreeView {
     font-weight: 600;
 }
 
+.tv-treeType {
+    color: #aaaaaa;
+}
+
 div#tv-defTreeView span.tv-treeSymbol {
     margin: 0 0.2em;
 }
 
 span.tv-treeNodeType {
-    margin: 0 0.2em;
+    margin: 0 0.5em;
+}
+
+span.tv-treeNodeDesc {
+    margin-right: 0.5em;
 }
 
 

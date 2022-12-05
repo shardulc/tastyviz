@@ -34,9 +34,9 @@ class PackageView(
       ul(declarationLinks: _*),
     )
 
-  def clear() = $(ViewDivs.packageView).empty()
+  def clear(): Unit = $(ViewDivs.packageView).empty()
 
-  def displayPackage(model: TastyPackageModel) =
+  def displayPackage(model: TastyPackageModel): Unit =
     $(ViewDivs.packageView)
       .append(buildClasspathHtml.render)
       .append(buildPackageDeclarationsHtml(model).render)
