@@ -2,16 +2,25 @@ body {
     font-family: "Fira Code", "Ubuntu Mono", monospace;
     height: 100%;
     padding: 1em;
+    padding-top: 0;
+    margin-top: 0;
     display: flex;
     flex-direction: column;
     gap: 2em;
 }
 
 div#tv-treeControl {
-    align-items: center;
+    align-items: flex-end;
     display: flex;
     flex-direction: row;
     gap: 2.5em;
+    padding-bottom: 1em;
+    background: #ffffffe3;
+    border-color: #aaaaaa;
+    border-width: 2px;
+    border-bottom-style: solid;
+    position: fixed;
+    height: 3em;
 }
 
 div#tv-treeControl input {
@@ -26,6 +35,11 @@ div#tv-treeDisplay {
     align-items: flex-start;
     display: flex;
     flex-direction: row;
+    margin-top: 5em;
+}
+
+div#tv-packageView {
+    margin-top: 1em;
 }
 
 div#tv-defTreeView {
@@ -63,6 +77,12 @@ div#tv-symbolInfoView {
     display: flex;
     flex-direction: column;
     gap: 2.5em;
+    position: fixed;
+    top: 5em;
+    right: 4em;
+    padding: 1em;
+    background: #ffffffe3;
+    max-width: 35%;
 }
 
 div.tv-symbolInfoBox {
