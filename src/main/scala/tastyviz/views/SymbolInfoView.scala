@@ -81,7 +81,7 @@ class SymbolInfoView(
 
     val typeSymbolsDiv = model.typeSymbols.map(ts => div(
       span("links to types:", `class` := ViewStyles.symbolInfoBoxDesc),
-      div(ts.map(fullNameLinks).flatMap(t => Seq(t, span(", "))): _*)))
+      div(ts.map(fullNameLinks).flatMap(t => Seq(t, span(", "))).dropRight(1): _*)))
 
     val elem = div(
       `class` := ViewStyles.symbolInfoBox,
