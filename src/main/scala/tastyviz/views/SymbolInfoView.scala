@@ -32,8 +32,8 @@ class SymbolInfoView(
     $(ViewDivs.symbolInfoView).append(
       buildSymbolInfoHtml(model).render.outerHTML)
 
-  private def buildSymbolInfoHtml(model: TastySymbolModel) =
-    val fullNameLinks = Seq.unfold[Symbol, Option[Symbol]](Some(model.symbol))
+  private def fullNameLinks(symbol: Symbol) =
+    Seq.unfold[Symbol, Option[Symbol]](Some(symbol))
         (s => s.map(ss => (ss, if ss.owner == null then None else Some(ss.owner))))
       .reverse
       .map(sub => a(
@@ -42,18 +42,55 @@ class SymbolInfoView(
       ))
       .flatMap(a => Seq(a, span(".")))
       .dropRight(1)
-    div(
-      `class` := ViewStyles.symbolInfoBox,
-      div(
-        span("fully qual'd name:", `class` := ViewStyles.symbolInfoBoxDesc),
-        div(`class` := ViewStyles.treeSymbol)(fullNameLinks: _*)
-      ),
-      div(
-        span("flags:", `class` := ViewStyles.symbolInfoBoxDesc),
-        span(FlagsPrinter.print(model.flags)),
-      ),
-      div(
-        span("type:", `class` := ViewStyles.symbolInfoBoxDesc),
-        span(model.tpe.fold("(this is not a TermSymbol)")(ViewUtils.prettyPrintType)),
-      ),
+
+  private def buildSymbolInfoHtml(model: TastySymbolModel) =
+    val nameLinks = fullNameLinks(model.symbol)
+    val fullNameDiv = div(
+      span("fully qual'd name:", `class` := ViewStyles.symbolInfoBoxDesc),
+      div(`class` := ViewStyles.treeSymbol)(nameLinks: _*)
     )
+
+    val flagsDiv = div(
+      span("flags:", `class` := ViewStyles.symbolInfoBoxDesc),
+      span(FlagsPrinter.print(model.flags)),
+    )
+
+    val categories = Seq(
+      ("term symbol", model.symbol.isTerm),
+      ("type symbol", model.symbol.isType),
+      ("class symbol", model.symbol.isClass),
+      ("package symbol", model.symbol.isPackage))
+    val categoriesDiv = div(
+      span("this is a:", `class` := ViewStyles.symbolInfoBoxDesc),
+      span(categories.filter(_._2).map(_._1).mkString(", "))
+    )
+
+    val tpeDiv = model.tpe.map(t => div(
+      span("type:", `class` := ViewStyles.symbolInfoBoxDesc),
+      span(ViewUtils.prettyPrintType(t)),
+    ))
+
+    val typeBoundsDiv = model.typeBounds.map(b => div(
+      span("type bounds:", `class` := ViewStyles.symbolInfoBoxDesc),
+      span(Seq(
+          ViewUtils.prettyPrintType(b.low),
+          model.name,
+          ViewUtils.prettyPrintType(b.high))
+        .mkString(" <: ")),
+    ))
+
+    val typeSymbolsDiv = model.typeSymbols.map(ts => div(
+      span("links to types:", `class` := ViewStyles.symbolInfoBoxDesc),
+      div(ts.map(fullNameLinks).flatMap(t => Seq(t, span(", "))): _*)))
+
+    val elem = div(
+      `class` := ViewStyles.symbolInfoBox,
+      fullNameDiv,
+      flagsDiv,
+      categoriesDiv
+    )
+    val maybeTypeElem = tpeDiv.fold(elem)(d => elem(d))
+    val maybeBoundsElem = typeBoundsDiv.fold(maybeTypeElem)(d => maybeTypeElem(d))
+    val maybeTypeSymbolsElem =
+      typeSymbolsDiv.fold(maybeBoundsElem)(d => maybeBoundsElem(d))
+    maybeTypeSymbolsElem

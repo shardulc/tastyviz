@@ -7,6 +7,7 @@ import tastyquery.Types.*
 import tastyviz.models.*
 import tastyviz.views.jstreefacade.*
 import ViewConstants.*
+import scalatags.JsDom.TypedTag
 
 
 object ViewUtils:
@@ -40,9 +41,13 @@ object ViewUtils:
 
   def prettyPrintType(t: Type): String =
     val printed = prettyPrintTypeHelper(t)
-    if printed.startsWith("scala.Predef.") then printed.drop(13)
-    else if printed.startsWith("scala.") then printed.drop(6)
-    else printed
+    val noScala =
+      if printed.startsWith("scala.Predef.") then printed.drop(13)
+      else if printed.startsWith("scala.") then printed.drop(6)
+      else printed
+    if noScala == "|" then "Or"
+    else if noScala == "&" then "And"
+    else noScala
 
   private def prettyPrintTypeHelper(t: Type): String = t match
     case t: NamedType =>
@@ -58,4 +63,12 @@ object ViewUtils:
       prettyPrintType(t.tycon)
         + t.args.map(prettyPrintType).mkString("[", ", ", "]")
     case t: ThisType => s"this[${prettyPrintType(t.tref)}]"
+    case t: BoundedType =>
+      val bounds = Seq(
+        prettyPrintType(t.bounds.low),
+        "_",
+        prettyPrintType(t.bounds.high)).mkString(" <: ")
+      t.alias.fold(bounds)(a => bounds + " = " + prettyPrintType(a))
+    case t: OrType => s"${prettyPrintType(t.first)} | ${prettyPrintType(t.second)}"
+    case t: AndType => s"${prettyPrintType(t.first)} | ${prettyPrintType(t.second)}"
     case _ => t.toString

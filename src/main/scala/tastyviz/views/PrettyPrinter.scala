@@ -46,6 +46,7 @@ class PrettyPrinter(using Context):
       case t: SeqLiteral => buildHtmlSeqLiteral(t, symbols)
       case t: This => buildHtmlThis(t, symbols)
       case t: Assign => buildHtmlAssign(t, symbols)
+      case t: TypeMember => buildHtmlTypeMember(t, symbols)
       case t @ _ => li(span(`class` := ViewStyles.treeNodeType, t.getClass().getName()))
 
   def buildHtmlClassDef(tree: ClassDef, symbols: IDSymbolMap) =
@@ -241,6 +242,26 @@ class PrettyPrinter(using Context):
           ul(buildHtml(tree.rhs, symbols)),
         ),
       ),
+    )
+
+  def buildHtmlTypeMember(tree: TypeMember, symbols: IDSymbolMap) =
+    val thisID = freshID()
+    symbols(thisID) = tree.symbol
+    li(
+      id := thisID,
+      `class` := "jstree-open",
+      span(`class` := ViewStyles.treeNodeType, "TypeMember"),
+      span(`class` := ViewStyles.treeSymbol, tree.name.toString),
+      tree.rhs match
+        case t: TypeTree => ul(li(span(
+          `class` := ViewStyles.treeNodeDesc,
+          ViewUtils.prettyPrintType(t.toType))))
+        case t: TypeBounds => ul(li(span(
+          `class` := ViewStyles.treeNodeDesc,
+          Seq(
+            ViewUtils.prettyPrintType(t.low),
+            "_",
+            ViewUtils.prettyPrintType(t.high)).mkString(" <: "))))
     )
 
   def treeToSymbol(t: TermTree) =

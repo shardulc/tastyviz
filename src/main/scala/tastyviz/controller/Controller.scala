@@ -100,11 +100,7 @@ class Controller(classpath: List[String])(using Context):
   def onSelectionChange(symbols: Seq[Symbol]): Unit =
     view.clearSymbolInfo()
     symbols.foreach(s =>
-      view.displaySymbolInfo(TastySymbolModel(s, State.current.owner.get)))
-
-  def onBackToPackage(): Unit =
-    println("back 2")
-    HistoryFacade.back()
+      view.displaySymbolInfo(TastySymbolModel(s)))
 
 
 object Controller:

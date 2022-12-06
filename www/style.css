@@ -50,6 +50,10 @@ div#tv-defTreeView {
     font-weight: 600;
 }
 
+div.tv-symbolInfoBox div.tv-treeSymbol {
+    word-break: break-all;
+}
+
 .tv-treeType {
     color: #aaaaaa;
 }
@@ -63,7 +67,7 @@ span.tv-treeNodeType {
 }
 
 span.tv-treeNodeDesc {
-    margin-right: 0.5em;
+    margin: 0 0.5em;
 }
 
 
@@ -93,9 +97,11 @@ div.tv-symbolInfoBox {
 
 div.tv-symbolInfoBox > div {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    gap: 1em;
+    overflow-wrap: anywhere;
 }
 
 span.tv-symbolInfoBoxDesc {
-    display: block;
+    min-width: fit-content;
 }
