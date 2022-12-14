@@ -3,7 +3,7 @@
 TASTyViz is a web-based visualizer for [TASTy][1], the Scala 3
 interchange format. It is currently minimally usable but very much
 still a work in progress. Please report issues or request features on
-[the GitLab project][2], or open a merge request!
+[the GitHub project][2], or open a pull request!
 
 ### How to use
 
@@ -28,4 +28,4 @@ jsTree).
 
 
 [1]: https://docs.scala-lang.org/scala3/guides/tasty-overview.html
-[2]: https://gitlab.epfl.ch/shardulc/tastyviz/-/issues
+[2]: https://github.com/shardulc/tastyviz/issues
